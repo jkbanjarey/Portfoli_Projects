@@ -1,0 +1,27 @@
+services:
+  train:
+    build: .
+    command: python -m src.pipeline.train --data-path /data/PS_20174392719_1491204439457_log.csv
+    environment:
+      MLFLOW_TRACKING_URI: sqlite:////artifacts/mlflow.db
+      MLFLOW_ARTIFACT_ROOT: /artifacts/mlruns
+      MODEL_PATH: /artifacts/champion/model.joblib
+    volumes:
+      - ./PaySim_Dataset:/data:ro
+      - ./artifacts:/artifacts
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL_PATH: /artifacts/champion/model.joblib
+      PREDICTION_LOG_PATH: /artifacts/logs/predictions.jsonl
+    volumes:
+      - ./artifacts:/artifacts
+  mlflow:
+    build: .
+    command: mlflow ui --backend-store-uri sqlite:////artifacts/mlflow.db --default-artifact-root /artifacts/mlruns --host 0.0.0.0 --port 5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./artifacts:/artifacts
